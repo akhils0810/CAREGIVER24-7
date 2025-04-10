@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h2>Hourly Schedule View</h2>
+                <p class="text-muted">Created on {{ created_at }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="?view=calendar" class="btn btn-primary">Calendar View</a>
+                <a href="?view=caregiver" class="btn btn-primary">Caregiver View</a>
+                <a href="?view=shift" class="btn btn-primary">Shift View</a>
+                <a href="?view=hour" class="btn btn-primary active">Hour View</a>
+            </div>
+        </div>
+
+        {% for week in schedule.schedules %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-light">
+                <h3 class="h5 mb-0">Week Starting {{ week.week_start }}</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered hour-schedule mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="time-cell">Time</th>
+                                {% for date, _ in week.schedule.items() %}
+                                <th>{{ date }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hour in range(24) %}
+                            <tr>
+                                <td class="time-cell">
+                                    {{ "%02d"|format(hour) }}:00 - {{ "%02d"|format((hour + 1) % 24) }}:00
+                                </td>
+                                {% for date, day_schedule in week.schedule.items() %}
+                                <td class="schedule-cell">
+                                    {% for shift_id, shift_info in shifts.items() %}
+                                        {% if day_schedule.get(shift_id) %}
+                                            {% set shift_start = shift_info.time.split(' - ')[0] %}
+                                            {% set shift_end = shift_info.time.split(' - ')[1] %}
+                                            {% set start_hour = shift_start|replace('am', '')|replace('pm', '')|int %}
+                                            {% set end_hour = shift_end|replace('am', '')|replace('pm', '')|int %}
+                                            
+                                            {# Convert to 24-hour format #}
+                                            {% if 'pm' in shift_start and start_hour != 12 %}
+                                                {% set start_hour = start_hour + 12 %}
+                                            {% elif 'am' in shift_start and start_hour == 12 %}
+                                                {% set start_hour = 0 %}
+                                            {% endif %}
+                                            
+                                            {% if 'pm' in shift_end and end_hour != 12 %}
+                                                {% set end_hour = end_hour + 12 %}
+                                            {% elif 'am' in shift_end and end_hour == 12 %}
+                                                {% set end_hour = 0 %}
+                                            {% endif %}
+                                            
+                                            {# Handle shifts that cross midnight #}
+                                            {% if start_hour > end_hour %}
+                                                {% if hour >= start_hour or hour < end_hour %}
+                                                    {% for caregiver_id in day_schedule[shift_id] %}
+                                                        {% if caregiver_id in caregivers %}
+                                                        <div class="shift-{{ shift_id }} {% if caregivers[caregiver_id].score >= 90 %}high-performer-cell{% endif %}">
+                                                            <div class="caregiver-item">
+                                                                {{ caregivers[caregiver_id].name }}
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                            {% else %}
+                                                {% if hour >= start_hour and hour < end_hour %}
+                                                    {% for caregiver_id in day_schedule[shift_id] %}
+                                                        {% if caregiver_id in caregivers %}
+                                                        <div class="shift-{{ shift_id }} {% if caregivers[caregiver_id].score >= 90 %}high-performer-cell{% endif %}">
+                                                            <div class="caregiver-item">
+                                                                {{ caregivers[caregiver_id].name }}
+                                                            </div>
+                                                        </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.hour-schedule {
+    font-size: 0.9em;
+}
+
+.time-cell {
+    white-space: nowrap;
+    font-weight: 600;
+    background-color: #f8f9fa;
+    min-width: 120px;
+}
+
+.schedule-cell {
+    padding: 2px !important;
+    vertical-align: middle !important;
+    min-width: 140px;
+}
+
+.table-bordered {
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.table-bordered > :not(caption) > * > * {
+    border-width: 1px;
+    border-color: rgba(0,0,0,0.1);
+}
+
+.card {
+    border: none;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+/* High performer cell styles */
+.high-performer-cell {
+    position: relative;
+}
+
+.high-performer-cell::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(200, 250, 220, 0.95), rgba(180, 240, 200, 0.95));
+    pointer-events: none;
+}
+
+.high-performer-cell::after {
+    content: '★';
+    position: absolute;
+    top: -2px;
+    right: 2px;
+    font-size: 8px;
+    color: #2ed573;
+    z-index: 1;
+}
+
+.high-performer-cell .caregiver-item {
+    position: relative;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(46, 213, 115, 0.3);
+    z-index: 1;
+}
+
+/* Ensure shift borders remain visible */
+.shift-A1, .shift-A2, .shift-A3, .shift-G, .shift-B1, .shift-B2, .shift-B3 {
+    border-width: 2px !important;
+    border-style: solid !important;
+    background: white !important;
+    padding: 1px !important;
+    margin: 1px !important;
+}
+
+/* ROY G BIV border colors */
+.shift-A1 { border-color: #FF0000 !important; }  /* Red */
+.shift-A2 { border-color: #FFA500 !important; }  /* Orange */
+.shift-A3 { border-color: #FFD700 !important; }  /* Yellow */
+.shift-G { border-color: #00FF00 !important; }   /* Green */
+.shift-B1 { border-color: #0000FF !important; }  /* Blue */
+.shift-B2 { border-color: #4B0082 !important; }  /* Indigo */
+.shift-B3 { border-color: #8B00FF !important; }  /* Violet */
+</style>
+{% endblock %} 

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Caregivers Management</h2>
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addCaregiverModal">
+            Add New Caregiver
+        </button>
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Score</th>
+                    <th>Max Hours/Week</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, caregiver in caregivers.items() %}
+                <tr {% if caregiver.score >= 90 %}class="high-performer"{% endif %}>
+                    <td>{{ id }}</td>
+                    <td>{{ caregiver.name }}</td>
+                    <td>{{ caregiver.score }}</td>
+                    <td>
+                        {% if caregiver.score >= 80 %}
+                            40 hours
+                        {% elif caregiver.score >= 70 %}
+                            32 hours
+                        {% elif caregiver.score >= 60 %}
+                            24 hours
+                        {% else %}
+                            Not eligible
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-warning edit-btn" 
+                                data-id="{{ id }}"
+                                data-name="{{ caregiver.name }}"
+                                data-score="{{ caregiver.score }}">Edit</button>
+                        <button class="btn btn-sm btn-danger delete-btn" 
+                                data-id="{{ id }}">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Caregiver Modal -->
+<div class="modal fade" id="addCaregiverModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Caregiver</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCaregiverForm">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="score" class="form-label">Score (0-100)</label>
+                        <input type="number" class="form-control" id="score" min="0" max="100" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveCaregiver()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Caregiver Modal -->
+<div class="modal fade" id="editCaregiverModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Caregiver</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCaregiverForm">
+                    <input type="hidden" id="editId">
+                    <div class="mb-3">
+                        <label for="editName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="editName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editScore" class="form-label">Score (0-100)</label>
+                        <input type="number" class="form-control" id="editScore" min="0" max="100" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="updateCaregiver()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.high-performer {
+    background-color: #e3fcef !important;
+}
+.high-performer:nth-of-type(odd) {
+    background-color: #d4f7e7 !important;
+}
+.table-striped > tbody > tr.high-performer:hover {
+    background-color: #c5f2df !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit button handlers
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const score = this.dataset.score;
+            editCaregiver(id, name, score);
+        });
+    });
+
+    // Delete button handlers
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            deleteCaregiver(id);
+        });
+    });
+});
+
+function saveCaregiver() {
+    const name = document.getElementById('name').value;
+    const score = parseInt(document.getElementById('score').value);
+    
+    fetch('/api/caregivers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score })
+    })
+    .then(response => response.json())
+    .then(() => location.reload());
+}
+
+function editCaregiver(id, name, score) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editScore').value = score;
+    new bootstrap.Modal(document.getElementById('editCaregiverModal')).show();
+}
+
+function updateCaregiver() {
+    const id = document.getElementById('editId').value;
+    const name = document.getElementById('editName').value;
+    const score = parseInt(document.getElementById('editScore').value);
+    
+    fetch(`/api/caregivers/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            location.reload();
+        } else {
+            alert('Error updating caregiver: ' + data.message);
+        }
+    })
+    .catch(() => alert('Error updating caregiver'));
+}
+
+function deleteCaregiver(id) {
+    if (confirm('Are you sure you want to delete this caregiver?')) {
+        fetch(`/api/caregivers/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(() => location.reload());
+    }
+}
+</script>
+{% endblock %} 

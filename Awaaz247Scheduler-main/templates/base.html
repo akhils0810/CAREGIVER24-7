@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24/7 Schedule Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Base shift styles */
+        .shift-A1, .shift-A2, .shift-A3, .shift-G, .shift-B1, .shift-B2, .shift-B3 {
+            position: relative;
+            background: white !important;
+            padding: 1px !important;
+            border-width: 2px !important;
+            border-style: solid !important;
+        }
+
+        /* ROY G BIV border colors */
+        .shift-A1 { border-color: #FF0000 !important; }  /* Red */
+        .shift-A2 { border-color: #FFA500 !important; }  /* Orange */
+        .shift-A3 { border-color: #FFD700 !important; }  /* Yellow */
+        .shift-G { border-color: #00FF00 !important; }   /* Green */
+        .shift-B1 { border-color: #0000FF !important; }  /* Blue */
+        .shift-B2 { border-color: #4B0082 !important; }  /* Indigo */
+        .shift-B3 { border-color: #8B00FF !important; }  /* Violet */
+
+        /* Caregiver item styles */
+        .caregiver-item {
+            background-color: white !important;
+            padding: 4px 8px !important;
+            margin: 2px 0 !important;
+            border-radius: 2px !important;
+            font-weight: 500 !important;
+            color: #000000 !important;
+        }
+
+        /* Table styles */
+        .table {
+            background-color: white;
+        }
+
+        .table > :not(caption) > * > * {
+            background-color: white !important;
+            color: #000000 !important;
+        }
+
+        /* Card styles */
+        .card {
+            background-color: white;
+        }
+
+        .card-header {
+            background-color: #f8f9fa !important;
+            color: #000000 !important;
+        }
+
+        /* Button styles */
+        .btn-warning, .btn-danger {
+            color: white !important;
+        }
+
+        /* Modal styles */
+        .modal-content {
+            background-color: white;
+        }
+
+        .modal-header {
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">24/7 Schedule Manager</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/caregivers">Caregivers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/schedule">Schedule Template</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/generate_schedule">Generate Schedule</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/view_schedules">Saved Schedules</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/timeoff">Time Off</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

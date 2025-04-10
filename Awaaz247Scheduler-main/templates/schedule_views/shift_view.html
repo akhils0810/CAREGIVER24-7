@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Debug Info -->
+    <div class="alert alert-info">
+        Schedule ID: {{ schedule.id if schedule else 'Not available' }}
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Shift Schedule Summary</h2>
+            <p class="text-muted mb-0">Schedule created on: {{ created_at }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='calendar') }}" class="btn btn-outline-primary">Calendar View</a>
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='caregiver') }}" class="btn btn-outline-primary">Caregiver View</a>
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='shift') }}" class="btn btn-primary active">Shift View</a>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for shift_id, shift_data in shift_summary.items() %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3>{{ shift_id }} ({{ shift_data.time }})</h3>
+                    <div class="text-muted">{{ shift_data.hours }} hours per shift</div>
+                </div>
+                <div class="card-body">
+                    <!-- Weekly Assignment Summary -->
+                    <div class="mb-4">
+                        <h4>Weekly Assignments</h4>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Week</th>
+                                        <th>Total Assignments</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for week, count in shift_data.assignments_by_week.items() %}
+                                    <tr>
+                                        <td>{{ week }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Caregiver Assignment Summary -->
+                    <div class="mb-4">
+                        <h4>Caregiver Assignments</h4>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Caregiver</th>
+                                        <th>Times Assigned</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for caregiver_id, count in shift_data.caregivers.items() %}
+                                    <tr>
+                                        <td>{{ caregivers[caregiver_id].name }}</td>
+                                        <td>{{ count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Daily Schedule -->
+                    <div>
+                        <h4>Daily Schedule</h4>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Day</th>
+                                        <th>Assigned Caregivers</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for shift in shift_data.shifts %}
+                                    <tr>
+                                        <td>{{ shift.date }}</td>
+                                        <td>{{ shift.day }}</td>
+                                        <td>
+                                            {% for caregiver_id in shift.caregivers %}
+                                            <div class="caregiver-badge">
+                                                {{ caregivers[caregiver_id].name }}
+                                            </div>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <span>Total Assignments: {{ shift_data.total_assignments }}</span>
+                        <span>Total Hours: {{ shift_data.total_assignments * shift_data.hours }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.card-header {
+    background-color: #f8f9fa;
+}
+.table-sm td, .table-sm th {
+    padding: 0.5rem;
+}
+.caregiver-badge {
+    display: inline-block;
+    background-color: #e9ecef;
+    padding: 0.2em 0.6em;
+    border-radius: 3px;
+    margin: 0.1em 0.2em;
+    font-size: 0.9em;
+}
+.card-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding: 0.75rem 1rem;
+}
+</style>
+{% endblock %} 

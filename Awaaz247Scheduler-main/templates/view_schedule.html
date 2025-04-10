@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Debug Info -->
+    <div class="alert alert-info">
+        Schedule ID: {{ schedule.id if schedule else 'Not available' }}
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Schedule for Week of {{ week_start.strftime('%B %d, %Y') }}</h2>
+            <p class="text-muted mb-0">Schedule created on: {{ created_at }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='calendar') }}" class="btn btn-primary active">Calendar View</a>
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='caregiver') }}" class="btn btn-outline-primary">Caregiver View</a>
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='shift') }}" class="btn btn-outline-primary">Shift View</a>
+        </div>
+    </div>
+
+    {% if export_button %}
+    <div class="mb-4">
+        <a href="{{ url_for('export_to_calendar', schedule_id=schedule.id) }}" class="btn btn-primary">
+            <i class="fas fa-calendar-plus"></i> Export to Google Calendar
+        </a>
+    </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    {% for shift, info in shifts.items() %}
+                    <th>{{ shift }} ({{ info.time }})</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for day in days %}
+                <tr>
+                    <td>{{ day }}</td>
+                    {% for shift, info in shifts.items() %}
+                    <td>
+                        {% set day_date = (week_start + day|day_offset).strftime('%Y-%m-%d') %}
+                        {% if schedule.schedules[0].schedule[day_date] and schedule.schedules[0].schedule[day_date][shift] %}
+                            {% for caregiver_id in schedule.schedules[0].schedule[day_date][shift] %}
+                                {% if caregiver_id and caregiver_id in caregivers %}
+                                    {% set caregiver = caregivers[caregiver_id] %}
+                                    <div class="caregiver-slot" style="background-color: {{ info.color }}20;">
+                                        {{ caregiver.name }}
+                                        {% if caregiver.initials %}
+                                        <small class="text-muted">({{ caregiver.initials }})</small>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-slot">-</div>
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.caregiver-slot {
+    padding: 8px;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+.empty-slot {
+    padding: 8px;
+    color: #999;
+    text-align: center;
+}
+</style>
+{% endblock %} 

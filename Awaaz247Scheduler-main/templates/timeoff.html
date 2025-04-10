@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Time Off Management</h2>
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addTimeOffModal">
+            Add Time Off Request
+        </button>
+        
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Caregiver</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id, timeoff in timeoff.items() %}
+                <tr>
+                    <td>{{ timeoff.caregiver_name }}</td>
+                    <td>{{ timeoff.start_date }}</td>
+                    <td>{{ timeoff.end_date }}</td>
+                    <td>{{ timeoff.status }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editTimeOff('{{ id }}')">Edit</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTimeOff('{{ id }}')">Delete</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Time Off Modal -->
+<div class="modal fade" id="addTimeOffModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Time Off Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTimeOffForm">
+                    <div class="mb-3">
+                        <label for="caregiverSelect" class="form-label">Caregiver</label>
+                        <select class="form-select" id="caregiverSelect" required>
+                            <option value="">Choose a caregiver...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="startDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="endDate" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveTimeOff()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load caregivers into select when modal opens
+document.getElementById('addTimeOffModal').addEventListener('show.bs.modal', function () {
+    fetch('/api/caregivers')
+        .then(response => response.json())
+        .then(caregivers => {
+            const select = document.getElementById('caregiverSelect');
+            select.innerHTML = '<option value="">Choose a caregiver...</option>';
+            Object.entries(caregivers).forEach(([id, caregiver]) => {
+                select.innerHTML += `<option value="${id}">${caregiver.name}</option>`;
+            });
+        });
+});
+
+function saveTimeOff() {
+    const caregiverId = document.getElementById('caregiverSelect').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    fetch('/api/timeoff', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            caregiver_id: caregiverId,
+            start_date: startDate,
+            end_date: endDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        location.reload();
+    });
+}
+
+function editTimeOff(id) {
+    // Implementation for editing time off
+}
+
+function deleteTimeOff(id) {
+    if (confirm('Are you sure you want to delete this time off request?')) {
+        fetch(`/api/timeoff/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            location.reload();
+        });
+    }
+}
+</script>
+{% endblock %} 

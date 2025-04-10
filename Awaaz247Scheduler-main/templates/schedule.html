@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Weekly Schedule Template</h2>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        {% for shift_id, shift in shifts.items() %}
+                        <th class="shift-{{ shift_id }}">
+                            {{ shift_id }}<br>
+                            {{ shift.time }}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day in days %}
+                    <tr>
+                        <td>{{ day }}</td>
+                        {% for shift_id in shifts.keys() %}
+                        <td class="shift-{{ shift_id }}">
+                            <div class="caregiver-list" id="{{ day }}-{{ shift_id }}">
+                                {% if template and template.get(day, {}).get(shift_id) %}
+                                    {% for caregiver_id in template[day][shift_id] %}
+                                    <div class="caregiver-item" data-caregiver-id="{{ caregiver_id }}">
+                                        {% if caregiver_id in caregivers %}
+                                            {{ caregivers[caregiver_id].name }}
+                                        {% else %}
+                                            Unknown Caregiver
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-danger" onclick="removeCaregiver('{{ day }}', '{{ shift_id }}', '{{ caregiver_id }}')">×</button>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <button class="btn btn-sm btn-primary" onclick="addCaregiver('{{ day }}', '{{ shift_id }}')">+</button>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Caregiver Modal -->
+<div class="modal fade" id="addCaregiverModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Caregiver to Shift</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCaregiverForm">
+                    <input type="hidden" id="selectedDay">
+                    <input type="hidden" id="selectedShift">
+                    <div class="mb-3">
+                        <label for="caregiverSelect" class="form-label">Select Caregiver</label>
+                        <select class="form-select" id="caregiverSelect" required>
+                            <option value="">Choose a caregiver...</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="saveCaregiverToShift()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.caregiver-item {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 2px 5px;
+    margin: 2px 0;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+</style>
+
+<script>
+function addCaregiver(day, shift) {
+    document.getElementById('selectedDay').value = day;
+    document.getElementById('selectedShift').value = shift;
+    
+    // Load caregivers into select
+    fetch('/api/caregivers')
+        .then(response => response.json())
+        .then(caregivers => {
+            const select = document.getElementById('caregiverSelect');
+            select.innerHTML = '<option value="">Choose a caregiver...</option>';
+            Object.entries(caregivers).forEach(([id, caregiver]) => {
+                select.innerHTML += `<option value="${id}">${caregiver.name}</option>`;
+            });
+        });
+    
+    new bootstrap.Modal(document.getElementById('addCaregiverModal')).show();
+}
+
+function saveCaregiverToShift() {
+    const day = document.getElementById('selectedDay').value;
+    const shift = document.getElementById('selectedShift').value;
+    const caregiverId = document.getElementById('caregiverSelect').value;
+    
+    if (!caregiverId) {
+        alert('Please select a caregiver');
+        return;
+    }
+    
+    fetch('/api/schedule', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            day,
+            shift,
+            caregiver_id: caregiverId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'error') {
+            alert(data.message);
+        } else {
+            location.reload();
+        }
+    });
+}
+
+function removeCaregiver(day, shift, caregiver) {
+    if (confirm('Are you sure you want to remove this caregiver from the shift?')) {
+        fetch('/api/schedule', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                day,
+                shift,
+                caregiver_id: caregiver
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'error') {
+                alert(data.message);
+            } else {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+{% endblock %} 

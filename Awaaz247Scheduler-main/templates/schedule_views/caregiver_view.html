@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Debug Info -->
+    <div class="alert alert-info">
+        Schedule ID: {{ schedule.id if schedule else 'Not available' }}
+    </div>
+
+    <!-- Navigation Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Caregiver Schedule Summary</h2>
+            <p class="text-muted mb-0">Schedule created on: {{ created_at }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='calendar') }}" class="btn btn-outline-primary">Calendar View</a>
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='caregiver') }}" class="btn btn-primary active">Caregiver View</a>
+            <a href="{{ url_for('view_schedule', schedule_id=schedule.id if schedule else '', view='shift') }}" class="btn btn-outline-primary">Shift View</a>
+        </div>
+    </div>
+
+    {% for caregiver in caregiver_summary %}
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>{{ caregiver.caregiver_name }}</h3>
+            <div>
+                <span class="badge bg-primary">Score: {{ caregiver.score }}</span>
+                <span class="badge bg-info">Weekly Limit: {{ caregiver.hours_limit }} hours</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Weekly Hours Summary -->
+            <div class="mb-4">
+                <h4>Weekly Hours</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Hours</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for week, hours in caregiver.shifts_by_week.items() %}
+                            <tr>
+                                <td>{{ week }}</td>
+                                <td>{{ hours }}</td>
+                                <td>
+                                    {% if hours > caregiver.hours_limit %}
+                                    <span class="text-danger">Exceeds limit by {{ hours - caregiver.hours_limit }} hours</span>
+                                    {% else %}
+                                    <span class="text-success">Within limit</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Shifts Schedule -->
+            <div class="mb-4">
+                <h4>Scheduled Shifts</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Shift</th>
+                                <th>Time</th>
+                                <th>Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shift in caregiver.shifts %}
+                            <tr>
+                                <td>{{ shift.date }}</td>
+                                <td>{{ shift.day }}</td>
+                                <td>{{ shift.shift }}</td>
+                                <td>{{ shift.shift_time }}</td>
+                                <td>{{ shift.hours }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Time Off Requests -->
+            {% if caregiver.timeoff %}
+            <div class="mb-4">
+                <h4>Time Off Requests</h4>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for timeoff in caregiver.timeoff %}
+                            <tr>
+                                <td>{{ timeoff.start_date }}</td>
+                                <td>{{ timeoff.end_date }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if timeoff.status == 'approved' else 'warning' }}">
+                                        {{ timeoff.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.table-sm td, .table-sm th {
+    padding: 0.5rem;
+}
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 1em;
+    margin-left: 0.5em;
+}
+</style>
+{% endblock %} 
